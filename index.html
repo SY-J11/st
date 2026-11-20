@@ -58,6 +58,14 @@
 <section class="sector-card archive-card" id="daily-archive">
  <div class="section-head"><div><h2>일별 종가 기록</h2><p>매일 한국시간 20:10 자동 저장 · 날짜별 11개 랭킹</p></div><div class="archive-actions"><button id="manual-recovery" type="button">누락 데이터 복구</button><button id="archive-refresh" type="button">기록 새로고침</button><button id="archive-delete" type="button">날짜별 기록 삭제</button></div></div>
  <div class="archive-controls"><label for="archive-date">저장 날짜</label><select id="archive-date"><option value="">기록 확인 중…</option></select><label for="archive-kind">랭킹 항목</label><select id="archive-kind"><option value="priceTop">거래대금 상위</option><option value="quantTop">거래량 상위</option><option value="marketSum">시가총액</option><option value="popular">인기 종목</option><option value="up">상승</option><option value="flat">보합</option><option value="down">하락</option><option value="volSurge">거래량 급증</option><option value="volDrop">거래량 급감</option><option value="high52">52주 최고</option><option value="low52">52주 최저</option></select><button id="archive-query" class="archive-query" type="button">조회</button></div>
+ <section class="archive-bread" aria-label="선택 날짜 시장 등락 종목 수">
+  <div class="archive-bread-title">선택 날짜 시장 등락 현황</div>
+  <div class="archive-bread-markets">
+   <div class="archive-bread-market"><b>코스피</b><div class="archive-bread-cells"><span>상승 <strong class="up" id="archive-breadth-kospi-up">—</strong></span><span>보합 <strong id="archive-breadth-kospi-flat">—</strong></span><span>하락 <strong class="down" id="archive-breadth-kospi-down">—</strong></span></div></div>
+   <div class="archive-bread-market"><b>코스닥</b><div class="archive-bread-cells"><span>상승 <strong class="up" id="archive-breadth-kosdaq-up">—</strong></span><span>보합 <strong id="archive-breadth-kosdaq-flat">—</strong></span><span>하락 <strong class="down" id="archive-breadth-kosdaq-down">—</strong></span></div></div>
+  </div>
+  <div id="archive-breadth-meta" class="breadth-meta">선택 날짜의 저장된 시장 등락 데이터를 불러옵니다.</div>
+ </section>
  <button id="archive-expand" class="more archive-expand" type="button" aria-expanded="false">▼ 저장 기록 전체 펼쳐보기</button>
  <div id="archive-status" class="notice recovery-status" role="status" aria-live="polite">자동 저장 기록을 불러옵니다.</div>
  <div id="archive-content" hidden>

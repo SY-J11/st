@@ -436,6 +436,20 @@ async function loadMarketBreadth(date='latest'){
   else meta.textContent=`${j.date||'당일'} · ${allComplete?'전체 종목 집계 완료':'일부 페이지 집계 · 전체 수치 미확인'} · 저장 기준`;
  }catch(e){meta.textContent='시장 등락 집계 조회 실패 · '+e.message;}
 }
+async function loadArchiveBreadth(date){
+ const meta=$('archive-breadth-meta');if(!meta)return;
+ try{
+  const r=await fetch(WORKER+'/?archive=breadth&date='+encodeURIComponent(date||''),{cache:'no-store'}),j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||'저장 시장 등락 조회 실패');
+  const markets=j.markets||{};let any=false,complete=true;
+  for(const marketType of ['KOSPI','KOSDAQ']){
+   const m=markets[marketType],c=m?.counts||{},prefix=marketType.toLowerCase();
+   for(const kind of ['up','flat','down']){$('archive-breadth-'+prefix+'-'+kind).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
+   if(m){any=true;complete=complete&&!!m.complete;}
+  }
+  meta.textContent=any?`${date} · ${complete?'전체 집계 완료':'일부 집계 · 전체 수치 미확인'} · 저장 기록`:'선택한 날짜의 시장 등락 저장 데이터가 없습니다.';
+ }catch(e){meta.textContent='저장 시장 등락 조회 실패 · '+e.message;}
+}
 // v25: saved daily archive controls, full market partitions and live-equivalent analysis
 const ARCHIVE_KINDS={priceTop:'priceTop',quantTop:'quantTop',marketSum:'marketSum',popular:'popular',up:'up',flat:'flat',down:'down',volSurge:'volSurge',volDrop:'volDrop',high52:'high52',low52:'low52'};
 let archiveN=20,archiveEtf=false,archiveMarket='ALL',archiveSort='rank',archivePayloadRows=[],archiveSectorOpen=false,archiveLoadSeq=0;
@@ -494,6 +508,7 @@ async function loadArchiveDates(force=false){
   if(previous&&dates.includes(previous))sel.value=previous;
   archiveDatesLoaded=true;
   status.textContent=dates.length?`최근 ${dates.length}일의 저장 날짜를 불러왔습니다. 날짜와 랭킹 항목을 선택해 조회하세요.`:(j.message||'저장 실행 이력이 없습니다. Worker의 D1·Cron 실행 내역을 확인해 주세요.');
+  if(sel.value)loadArchiveBreadth(sel.value);else loadArchiveBreadth('');
  }catch(e){
   sel.innerHTML='<option value="">날짜 조회 실패</option>';
   status.textContent='날짜 조회 실패: '+e.message+( /row read limit|free tier|exceeded/i.test(e.message)?' · D1 무료 사용량이 초기화된 뒤 다시 시도해 주세요.':' · Worker와 D1 바인딩을 확인해 주세요.');
@@ -547,6 +562,7 @@ async function loadArchiveRows(){
 }
 if($('archive-date')){
  $('archive-refresh').addEventListener('click',()=>loadArchiveDates(true));
+ $('archive-date').addEventListener('change',()=>loadArchiveBreadth($('archive-date').value));
  const recoveryBtn=$('manual-recovery');
  const recoveryStatus=$('archive-status');
  if(recoveryBtn){
