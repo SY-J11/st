@@ -421,35 +421,40 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-opt]');if(!b)return;const [k,v]=b.dataset.opt.split(':');if(k==='min')minVal=+v;else hlMode=v;cache[active]=null;load(active,true)});
 
 
-// 네이버 지수 integration의 실시간 upDownStockInfo를 직접 조회합니다.
+// 네이버 integration에서 실시간 지수와 등락종목 집계를 읽어 표시합니다. 자동 반복 호출은 하지 않습니다.
+function formatIndexValue(v){if(v==null||!Number.isFinite(Number(v)))return '—';return Number(v).toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function formatIndexDiff(v){if(v==null||!Number.isFinite(Number(v)))return '—';const n=Number(v);return (n>0?'+':'')+n.toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function setIndexColor(el,diff){if(!el)return;el.classList.remove('up','down','flat');el.classList.add(diff==null?'flat':Number(diff)>0?'up':Number(diff)<0?'down':'flat');}
+function renderLiveMarket(marketType,m){const prefix=marketType.toLowerCase(),c=m?.counts||{},idx=m?.index||{};
+ for(const kind of ['up','flat','down']){$('breadth-'+prefix+'-'+kind).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
+ const indexEl=$('breadth-'+prefix+'-index'),diffEl=$('breadth-'+prefix+'-diff'),rateEl=$('breadth-'+prefix+'-rate');
+ if(indexEl)indexEl.textContent=formatIndexValue(idx.index);if(diffEl){diffEl.textContent=(idx.diff==null?'':Number(idx.diff)>0?'▲ ':Number(idx.diff)<0?'▼ ':'')+formatIndexDiff(idx.diff);setIndexColor(diffEl,idx.diff);}if(rateEl){rateEl.textContent=idx.rate==null?'':`(${Number(idx.rate)>0?'+':''}${Number(idx.rate).toFixed(2)}%)`;setIndexColor(rateEl,idx.rate);}
+}
 async function loadMarketBreadthLive(){
  const meta=$('breadth-meta');try{
   const r=await fetch(WORKER+'/?live=breadth',{cache:'no-store'}),j=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(j.error||'실시간 등락 집계 조회 실패');
+  if(!r.ok)throw new Error(j.error||'실시간 시장 현황 조회 실패');
   const markets=j.markets||{};let any=false,errors=[];
-  for(const marketType of ['KOSPI','KOSDAQ']){
-   const m=markets[marketType],c=m?.counts||{},prefix=marketType.toLowerCase();
-   for(const kind of ['up','flat','down']){$('breadth-'+prefix+'-'+kind).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
-   if(m)any=true;
-  }
+  for(const marketType of ['KOSPI','KOSDAQ']){const m=markets[marketType];renderLiveMarket(marketType,m);if(m)any=true;}
   if(Array.isArray(j.errors))errors=j.errors;
-  if(!any)meta.textContent='네이버 실시간 등락종목 집계 데이터를 가져오지 못했습니다.';
-  else meta.textContent=`네이버 실시간 등락종목 집계 · ${new Date(j.updatedAt||Date.now()).toLocaleTimeString('ko-KR')} 갱신${errors.length?' · '+errors.join(' / '):''}`;
- }catch(e){meta.textContent='실시간 등락종목 조회 실패 · '+e.message;}
+  if(!any)meta.textContent='네이버 실시간 시장 현황 데이터를 가져오지 못했습니다.';
+  else meta.textContent=`네이버 실시간 시장 현황 · ${new Date(j.updatedAt||Date.now()).toLocaleTimeString('ko-KR')} 조회${errors.length?' · '+errors.join(' / '):''}`;
+ }catch(e){meta.textContent='실시간 시장 현황 조회 실패 · '+e.message;}
+}
+function renderArchiveMarket(marketType,m){const prefix=marketType.toLowerCase(),c=m?.counts||{},idx=m?.index||{};
+ for(const kind of ['up','flat','down']){$('archive-breadth-'+prefix+'-'+kind).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
+ const indexEl=$('archive-bread-'+prefix+'-index'),diffEl=$('archive-bread-'+prefix+'-diff'),rateEl=$('archive-bread-'+prefix+'-rate');
+ if(indexEl)indexEl.textContent=formatIndexValue(idx.index);if(diffEl){diffEl.textContent=(idx.diff==null?'':Number(idx.diff)>0?'▲ ':Number(idx.diff)<0?'▼ ':'')+formatIndexDiff(idx.diff);setIndexColor(diffEl,idx.diff);}if(rateEl){rateEl.textContent=idx.rate==null?'':`(${Number(idx.rate)>0?'+':''}${Number(idx.rate).toFixed(2)}%)`;setIndexColor(rateEl,idx.rate);}
 }
 async function loadArchiveBreadth(date){
- const meta=$('archive-breadth-meta');if(!meta)return;
+ const meta=$('archive-bread-meta');if(!meta)return;
  try{
   const r=await fetch(WORKER+'/?archive=breadth&date='+encodeURIComponent(date||''),{cache:'no-store'}),j=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(j.error||'저장 시장 등락 조회 실패');
+  if(!r.ok)throw new Error(j.error||'저장 시장 현황 조회 실패');
   const markets=j.markets||{};let any=false,complete=true;
-  for(const marketType of ['KOSPI','KOSDAQ']){
-   const m=markets[marketType],c=m?.counts||{},prefix=marketType.toLowerCase();
-   for(const kind of ['up','flat','down']){$('archive-breadth-'+prefix+'-'+kind).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
-   if(m){any=true;complete=complete&&!!m.complete;}
-  }
-  meta.textContent=any?`${date} · ${complete?'전체 집계 완료':'일부 집계 · 전체 수치 미확인'} · 저장 기록`:'선택한 날짜의 시장 등락 저장 데이터가 없습니다.';
- }catch(e){meta.textContent='저장 시장 등락 조회 실패 · '+e.message;}
+  for(const marketType of ['KOSPI','KOSDAQ']){const m=markets[marketType];renderArchiveMarket(marketType,m);if(m){any=true;complete=complete&&!!m.complete;}}
+  meta.textContent=any?`${date} · ${complete?'저장 완료':'일부 데이터'} · 일별 기록`:'선택한 날짜의 시장 저장 데이터가 없습니다.';
+ }catch(e){meta.textContent='저장 시장 현황 조회 실패 · '+e.message;}
 }
 // v25: saved daily archive controls, full market partitions and live-equivalent analysis
 const ARCHIVE_KINDS={priceTop:'priceTop',quantTop:'quantTop',marketSum:'marketSum',popular:'popular',up:'up',flat:'flat',down:'down',volSurge:'volSurge',volDrop:'volDrop',high52:'high52',low52:'low52'};
@@ -596,7 +601,6 @@ if($('archive-date')){
  document.addEventListener('click',e=>{if(e.target&&e.target.id==='archive-sector-more'){archiveSectorOpen=!archiveSectorOpen;renderArchive()}});
  loadArchiveDates();
  loadMarketBreadthLive();
- setInterval(loadMarketBreadthLive,30000);
  const deleteBtn=$('archive-delete');
  if(deleteBtn)deleteBtn.addEventListener('click',async()=>{
   const date=$('archive-date')?.value;

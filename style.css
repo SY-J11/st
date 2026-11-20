@@ -131,3 +131,19 @@ html.dark .breadth-cell{background:#202733}
 
 /* V36 selected-date market breadth in daily archive */
 .archive-bread{border:1px solid var(--line);border-radius:10px;padding:8px;margin:8px 0;background:var(--card)}.archive-bread-title{font-size:12px;font-weight:800;margin-bottom:6px}.archive-bread-markets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.archive-bread-market{min-width:0}.archive-bread-market>b{display:block;font-size:11px;margin:0 0 4px}.archive-bread-cells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.archive-bread-cells span{border-radius:6px;background:#f7f9fc;padding:5px 2px;text-align:center;font-size:9px;white-space:nowrap}.archive-bread-cells strong{font-size:12px;font-variant-numeric:tabular-nums;margin-left:2px}.archive-bread .breadth-meta{margin-top:5px}html.dark .archive-bread-cells span{background:#202733}@media(max-width:650px){.archive-bread-markets{grid-template-columns:1fr;gap:6px}}
+/* V38: each market card combines index summary and 3 breadth counters */
+.market-breadth{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}
+.breadth-market{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card)}
+.breadth-index{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 1px 9px}
+.breadth-index>b{font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+.breadth-index>div{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.breadth-index strong{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.breadth-index small{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums}
+.archive-bread-markets{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.archive-bread-market{border:1px solid var(--line);border-radius:9px;padding:8px;background:var(--card)}
+.archive-bread-index{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:3px 0 7px}
+.archive-bread-index>strong{font-size:18px;font-variant-numeric:tabular-nums}
+.archive-bread-index>span{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.archive-bread-index em{font-size:11px;font-style:normal;font-weight:800}
+.archive-bread-index small{font-size:9px;font-weight:700}
+@media(max-width:650px){.market-bread-depth{grid-template-columns:1fr}.market-bread-depth .breadth-market{width:100%}.market-breadth{grid-template-columns:1fr}.breadth-index>b{font-size:21px}.archive-bread-markets{grid-template-columns:1fr}.archive-bread-index>strong{font-size:17px}}
