@@ -421,20 +421,21 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-opt]');if(!b)return;const [k,v]=b.dataset.opt.split(':');if(k==='min')minVal=+v;else hlMode=v;cache[active]=null;load(active,true)});
 
 
-// 저장된 당일 시장 등락 종목 수(코스피·코스닥)
-async function loadMarketBreadth(date='latest'){
+// 네이버 지수 integration의 실시간 upDownStockInfo를 직접 조회합니다.
+async function loadMarketBreadthLive(){
  const meta=$('breadth-meta');try{
-  const r=await fetch(WORKER+'/?archive=breadth&date='+encodeURIComponent(date),{cache:'no-store'}),j=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(j.error||'시장 등락 집계 조회 실패');
-  const markets=j.markets||{};let any=false,allComplete=true;
+  const r=await fetch(WORKER+'/?live=breadth',{cache:'no-store'}),j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||'실시간 등락 집계 조회 실패');
+  const markets=j.markets||{};let any=false,errors=[];
   for(const marketType of ['KOSPI','KOSDAQ']){
-   const m=markets[marketType],c=m?.counts||{};const prefix=marketType.toLowerCase();
-   for(const kind of ['up','flat','down']){$(`${'breadth-'+prefix+'-'+kind}`).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
-   if(m){any=true;allComplete=allComplete&&!!m.complete;}
+   const m=markets[marketType],c=m?.counts||{},prefix=marketType.toLowerCase();
+   for(const kind of ['up','flat','down']){$('breadth-'+prefix+'-'+kind).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
+   if(m)any=true;
   }
-  if(!any)meta.textContent='저장된 시장 등락 집계가 없습니다. 20:10 이후 자동 수집 기록을 확인하세요.';
-  else meta.textContent=`${j.date||'당일'} · ${allComplete?'전체 종목 집계 완료':'일부 페이지 집계 · 전체 수치 미확인'} · 저장 기준`;
- }catch(e){meta.textContent='시장 등락 집계 조회 실패 · '+e.message;}
+  if(Array.isArray(j.errors))errors=j.errors;
+  if(!any)meta.textContent='네이버 실시간 등락종목 집계 데이터를 가져오지 못했습니다.';
+  else meta.textContent=`네이버 실시간 등락종목 집계 · ${new Date(j.updatedAt||Date.now()).toLocaleTimeString('ko-KR')} 갱신${errors.length?' · '+errors.join(' / '):''}`;
+ }catch(e){meta.textContent='실시간 등락종목 조회 실패 · '+e.message;}
 }
 async function loadArchiveBreadth(date){
  const meta=$('archive-breadth-meta');if(!meta)return;
@@ -594,7 +595,8 @@ if($('archive-date')){
  document.querySelectorAll('[data-archive-sort]').forEach(b=>b.addEventListener('click',()=>{archiveSort=b.dataset.archiveSort;document.querySelectorAll('[data-archive-sort]').forEach(x=>x.classList.toggle('selected',x===b));renderArchive()}));
  document.addEventListener('click',e=>{if(e.target&&e.target.id==='archive-sector-more'){archiveSectorOpen=!archiveSectorOpen;renderArchive()}});
  loadArchiveDates();
- loadMarketBreadth('latest');
+ loadMarketBreadthLive();
+ setInterval(loadMarketBreadthLive,30000);
  const deleteBtn=$('archive-delete');
  if(deleteBtn)deleteBtn.addEventListener('click',async()=>{
   const date=$('archive-date')?.value;
