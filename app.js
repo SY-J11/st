@@ -532,6 +532,20 @@ async function loadArchiveRows(){
 }
 if($('archive-date')){
  $('archive-refresh').addEventListener('click',()=>loadArchiveDates(true));
+ const recoveryBtn=$('manual-recovery');
+ if(recoveryBtn) recoveryBtn.addEventListener('click',async()=>{
+  if(!confirm('오늘 저장 기록에서 실패하거나 누락된 항목만 다시 수집합니다. 정상 저장된 데이터는 다시 수집하지 않습니다. 실행할까요?'))return;
+  recoveryBtn.disabled=true;recoveryBtn.textContent='복구 중…';
+  const status=$('archive-status');status.textContent='누락·실패 항목을 확인하고 복구 중입니다. 잠시 기다려 주세요.';
+  try{
+   const r=await fetch(WORKER+'/?archive=recover',{method:'POST',cache:'no-store'}),j=await r.json().catch(()=>({}));
+   if(!r.ok)throw new Error(j.error||'복구 요청 실패 ('+r.status+')');
+   if(j.skipped)status.textContent='복구할 데이터가 없습니다. 오늘 수집 항목이 모두 정상입니다.';
+   else status.textContent=`수동 복구 완료 · 대상 ${j.retryCount||0}건 · 성공 ${j.recoveredSuccessCount||0}건 · 실패 ${j.recoveredFailureCount||0}건`;
+   await loadArchiveDates(true);
+  }catch(e){status.textContent='수동 복구 실패: '+e.message}
+  finally{recoveryBtn.disabled=false;recoveryBtn.textContent='누락 데이터 복구'}
+ });
  $('archive-query').addEventListener('click',loadArchiveRows);
  $('archive-expand').addEventListener('click',()=>{const c=$('archive-content'),b=$('archive-expand'),open=c.hidden;c.hidden=!open;b.setAttribute('aria-expanded',String(open));b.textContent=open?'▲ 저장 기록 전체 접기':'▼ 저장 기록 전체 펼쳐보기';if(open)renderArchive()});
  $('archive-cnt-tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-archive-n]');if(!b)return;archiveN=+b.dataset.archiveN;$('archive-cnt-tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderArchive()});
