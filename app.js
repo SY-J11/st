@@ -421,6 +421,21 @@ document.addEventListener('click',e=>{
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button[data-opt]');if(!b)return;const [k,v]=b.dataset.opt.split(':');if(k==='min')minVal=+v;else hlMode=v;cache[active]=null;load(active,true)});
 
 
+// 저장된 당일 시장 등락 종목 수(코스피·코스닥)
+async function loadMarketBreadth(date='latest'){
+ const meta=$('breadth-meta');try{
+  const r=await fetch(WORKER+'/?archive=breadth&date='+encodeURIComponent(date),{cache:'no-store'}),j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||'시장 등락 집계 조회 실패');
+  const markets=j.markets||{};let any=false,allComplete=true;
+  for(const marketType of ['KOSPI','KOSDAQ']){
+   const m=markets[marketType],c=m?.counts||{};const prefix=marketType.toLowerCase();
+   for(const kind of ['up','flat','down']){$(`${'breadth-'+prefix+'-'+kind}`).textContent=m&&Number.isFinite(Number(c[kind]))?Number(c[kind]).toLocaleString('ko-KR'):'—';}
+   if(m){any=true;allComplete=allComplete&&!!m.complete;}
+  }
+  if(!any)meta.textContent='저장된 시장 등락 집계가 없습니다. 20:10 이후 자동 수집 기록을 확인하세요.';
+  else meta.textContent=`${j.date||'당일'} · ${allComplete?'전체 종목 집계 완료':'일부 페이지 집계 · 전체 수치 미확인'} · 저장 기준`;
+ }catch(e){meta.textContent='시장 등락 집계 조회 실패 · '+e.message;}
+}
 // v25: saved daily archive controls, full market partitions and live-equivalent analysis
 const ARCHIVE_KINDS={priceTop:'priceTop',quantTop:'quantTop',marketSum:'marketSum',popular:'popular',up:'up',flat:'flat',down:'down',volSurge:'volSurge',volDrop:'volDrop',high52:'high52',low52:'low52'};
 let archiveN=20,archiveEtf=false,archiveMarket='ALL',archiveSort='rank',archivePayloadRows=[],archiveSectorOpen=false,archiveLoadSeq=0;
@@ -533,8 +548,8 @@ async function loadArchiveRows(){
 if($('archive-date')){
  $('archive-refresh').addEventListener('click',()=>loadArchiveDates(true));
  const recoveryBtn=$('manual-recovery');
+ const recoveryStatus=$('archive-status');
  if(recoveryBtn){
-  const recoveryStatus=$('archive-status');
   const kstNowMinutes=()=>{const p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());return Number(p.find(x=>x.type==='hour')?.value||0)*60+Number(p.find(x=>x.type==='minute')?.value||0)};
   let recoveryBusy=false;
   const updateRecoveryAvailability=()=>{const allowed=kstNowMinutes()>=20*60+10;if(!recoveryBusy){recoveryBtn.disabled=!allowed;recoveryBtn.textContent=allowed?'누락 데이터 복구':'20:10 이후 복구 가능';recoveryBtn.title=allowed?'오늘 누락된 데이터만 복구합니다.':'한국시간 20:10 이후에 사용할 수 있습니다.';} if(!allowed&&recoveryStatus)recoveryStatus.textContent='당일 랭킹 데이터는 한국시간 20:10에 최초 저장됩니다. 그 전에는 저장 및 복구가 실행되지 않습니다.';};
@@ -563,6 +578,24 @@ if($('archive-date')){
  document.querySelectorAll('[data-archive-sort]').forEach(b=>b.addEventListener('click',()=>{archiveSort=b.dataset.archiveSort;document.querySelectorAll('[data-archive-sort]').forEach(x=>x.classList.toggle('selected',x===b));renderArchive()}));
  document.addEventListener('click',e=>{if(e.target&&e.target.id==='archive-sector-more'){archiveSectorOpen=!archiveSectorOpen;renderArchive()}});
  loadArchiveDates();
+ loadMarketBreadth('latest');
+ const deleteBtn=$('archive-delete');
+ if(deleteBtn)deleteBtn.addEventListener('click',async()=>{
+  const date=$('archive-date')?.value;
+  if(!date){recoveryStatus.textContent='삭제할 저장 날짜를 먼저 선택해 주세요.';return;}
+  if(!confirm(`${date} 날짜의 랭킹 및 시장 등락 저장 기록을 모두 삭제합니다. 복구할 수 없습니다. 계속할까요?`))return;
+  const token=prompt('삭제용 Worker 비밀번호(ARCHIVE_DELETE_TOKEN)를 입력하세요.');
+  if(!token)return;
+  deleteBtn.disabled=true;deleteBtn.textContent='삭제 중…';
+  try{
+   const r=await fetch(WORKER+'/?archive=delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,token}),cache:'no-store'}),j=await r.json().catch(()=>({}));
+   if(!r.ok||!j.ok)throw new Error(j.error||'날짜 기록 삭제 실패');
+   await loadArchiveDates(true);
+   const breadth=$('breadth-meta');if(breadth&&j.date===date)loadMarketBreadth('latest');
+   recoveryStatus.textContent=`${date} 날짜 저장 기록 삭제 완료 · 삭제 변경 ${j.deletedChanges||0}건`;
+  }catch(e){recoveryStatus.textContent='날짜별 기록 삭제 실패: '+e.message;}
+  finally{deleteBtn.disabled=false;deleteBtn.textContent='날짜별 기록 삭제';}
+ });
 }
 
 // 명암(다크/라이트) 전환

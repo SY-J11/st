@@ -113,3 +113,18 @@ html.dark .archive-market-top button.selected{background:#2a3a52;border-color:#3
 @media(max-width:560px){.archive-controls{grid-template-columns:1fr 1fr auto;gap:7px}.archive-controls label{display:none}.archive-controls select{width:100%}.archive-query{grid-column:auto}}
 
 .archive-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.archive-actions button{font-size:12px}.archive-actions #manual-recovery{font-weight:800;background:var(--accent-soft,#eaf2ff);border-color:var(--accent,#8bb4e8)}.archive-actions button:disabled{opacity:.6;cursor:wait}
+
+/* V35 market breadth: KOSPI and KOSDAQ each show three counters, stacked */
+.market-breadth{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:8px 7px;margin:0 0 12px;display:grid;grid-template-columns:1fr;gap:8px}
+.breadth-market{min-width:0}
+.breadth-market-title{font-size:12px;font-weight:800;display:flex;align-items:baseline;gap:6px;margin:0 0 5px 2px}
+.breadth-market-title span{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.breadth-cells{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.breadth-cell{min-width:0;text-align:center;padding:7px 2px;border-radius:8px;background:#f7f9fc}
+.breadth-cell small{display:block;font-size:10px;color:var(--muted);white-space:nowrap;letter-spacing:-.2px}
+.breadth-cell b{display:block;font-size:14px;font-variant-numeric:tabular-nums;margin-top:3px;white-space:nowrap}
+.breadth-meta{font-size:9px;color:var(--muted);text-align:right;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.archive-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.archive-actions button{font-size:11px!important;padding:7px 8px!important}
+html.dark .breadth-cell{background:#202733}
+@media(max-width:650px){.market-breadth{padding:7px 5px;margin-bottom:9px;gap:7px}.breadth-market-title{font-size:11px;margin-bottom:4px}.breadth-cells{gap:3px}.breadth-cell{padding:6px 1px}.breadth-cell small{font-size:9px;letter-spacing:-.25px}.breadth-cell b{font-size:13px}.breadth-meta{font-size:8px}.archive-actions{width:100%;justify-content:flex-start}}
